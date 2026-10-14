@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendario condiviso</title>
+
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #1f2937;
+      background: #f3f4f6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    h1 { margin: 0 0 20px; }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 10px #0000000d;
+    }
+
+    .date-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .date-row input { flex: 1; }
+
+    input, select, button {
+      font: inherit;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      border: 0;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .event {
+      border-left: 6px solid;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 10px 0;
+      background: #f9fafb;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .personale { border-color: #dc2626; }
+    .lavoro { border-color: #16a34a; }
+    .bambini { border-color: #2563eb; }
+
+    .event-title { font-weight: 700; }
+    .event-details { color: #4b5563; font-size: .95rem; }
+
+    .delete {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 7px 10px;
+    }
+
+    #message {
+      min-height: 24px;
+      color: #15803d;
+      font-weight: 700;
+    }
+
+    #status {
+      color: #6b7280;
+      font-size: .9rem;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      color: #4b5563;
+      font-size: .9rem;
+    }
+
+    @media (max-width: 480px) {
+      .date-row { flex-wrap: wrap; }
+      .date-row input { flex-basis: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Calendario condiviso</h1>
+
+  <section class="card">
+    <div class="date-row">
+      <button class="secondary" id="prevDay" type="button" aria-label="Giorno precedente">←</button>
+      <input id="selectedDate" type="date" aria-label="Seleziona il giorno">
+      <button class="secondary" id="nextDay" type="button" aria-label="Giorno successivo">→</button>
+      <button class="secondary" id="today" type="button">Oggi</button>
+    </div>
+    <h2 id="dayHeading"></h2>
+    <div class="legend">
+      <span>🔴 Personali</span>
+      <span>🟢 Lavoro</span>
+      <span>🔵 Bambini</span>
+    </div>
+    <p id="status">Connessione al calendario…</p>
+    <div id="events"></div>
+  </section>
+
+  <section class="card">
+    <h2>Inserisci un nuovo evento</h2>
+
+    <form id="eventForm">
+      <label>
+        Descrizione dell’evento
+        <input id="title" type="text" placeholder="Es. Visita dal dentista" required maxlength="100">
+      </label>
+
+      <label>
+        Categoria
+        <select id="category" required>
+          <option value="personale">🔴 Evento personale</option>
+          <option value="lavoro">🟢 Appuntamento di lavoro</option>
+          <option value="bambini">🔵 Evento riguardante i bambini</option>
+        </select>
+      </label>
+
+      <label>
+        Ora dell’evento
+        <input id="time" type="time" required>
+      </label>
+
+      <label>
+        Durata (in minuti)
+        <input id="duration" type="number" min="1" value="60" required>
+      </label>
+
+      <button type="submit">Aggiungi evento</button>
+      <div id="message" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+
+  <!-- Firebase: SDK compatibile per Realtime Database -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    // Sostituisci questi valori con quelli del tuo progetto Firebase.
+    const firebaseConfig = {
+      apiKey: "INSERISCI_LA_TUA_API_KEY",
+      authDomain: "INSERISCI_IL_TUO_PROGETTO.firebaseapp.com",
+      databaseURL: "https://INSERISCI_IL_TUO_PROGETTO-default-rtdb.firebaseio.com",
+      projectId: "INSERISCI_IL_TUO_PROGETTO",
+      appId: "INSERISCI_IL_TUO_APP_ID"
+    };
+
+    const dateInput = document.getElementById("selectedDate");
+    const eventsContainer = document.getElementById("events");
+    const statusEl = document.getElementById("status");
+    const messageEl = document.getElementById("message");
+
+    let database;
+    let eventsRef;
+    let currentListener;
+
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function updateHeading() {
+      const date = new Date(dateInput.value + "T12:00:00");
+      document.getElementById("dayHeading").textContent =
+        new Intl.DateTimeFormat("it-IT", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric"
+        }).format(date);
+    }
+
+    function showEvents(snapshot) {
+      eventsContainer.replaceChildren();
+      const events = [];
+
+      snapshot.forEach(child => {
+        const event = child.val();
+        if (event && event.date === dateInput.value) {
+          events.push({ id: child.key, ...event });
+        }
+      });
+
+      events.sort((a, b) => a.time.localeCompare(b.time));
+
+      if (events.length === 0) {
+        eventsContainer.textContent = "Nessun evento per questo giorno.";
+        return;
+      }
+
+      for (const event of events) {
+        const item = document.createElement("div");
+        item.className = `event ${event.category}`;
+
+        const info = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "event-title";
+        title.textContent = event.title;
+
+        const details = document.createElement("div");
+        details.className = "event-details";
+        details.textContent = `${event.time} · ${event.duration} minuti`;
+
+        info.append(title, details);
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "delete";
+        removeButton.type = "button";
+        removeButton.textContent = "Elimina";
+        removeButton.setAttribute("aria-label", `Elimina ${event.title}`);
+        removeButton.addEventListener("click", async () => {
+          if (confirm(`Vuoi eliminare "${event.title}"?`)) {
+            await eventsRef.child(event.id).remove();
+          }
+        });
+
+        item.append(info, removeButton);
+        eventsContainer.append(item);
+      }
+    }
+
+    function listenForEvents() {
+      updateHeading();
+
+      if (!eventsRef) return;
+      if (currentListener) eventsRef.off("value", currentListener);
+
+      currentListener = snapshot => showEvents(snapshot);
+      eventsRef.on("value", currentListener, error => {
+        statusEl.textContent = "Errore di connessione: " + error.message;
+      });
+    }
+
+    dateInput.value = localDateString(new Date());
+
+    document.getElementById("prevDay").addEventListener("click", () => {
+      const date = new Date(dateInput.value + "T12:00:00");
+      date.setDate(date.getDate() - 1);
+      dateInput.value = localDateString(date);
+      listenForEvents();
+    });
+
+    document.getElementById("nextDay").addEventListener("click", () => {
+      const date = new Date(dateInput.value + "T12:00:00");
+      date.setDate(date.getDate() + 1);
+      dateInput.value = localDateString(date);
+      listenForEvents();
+    });
+
+    document.getElementById("today").addEventListener("click", () => {
+      dateInput.value = localDateString(new Date());
+      listenForEvents();
+    });
+
+    dateInput.addEventListener("change", listenForEvents);
+
+    document.getElementById("eventForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      messageEl.textContent = "";
+
+      const newEvent = {
+        title: document.getElementById("title").value.trim(),
+        category: document.getElementById("category").value,
+        date: dateInput.value,
+        time: document.getElementById("time").value,
+        duration: Number(document.getElementById("duration").value)
+      };
+
+      if (!newEvent.title || !newEvent.date || !newEvent.time || newEvent.duration < 1) {
+        messageEl.textContent = "Controlla i dati inseriti.";
+        return;
+      }
+
+      try {
+        await eventsRef.push(newEvent);
+        messageEl.textContent = "Appuntamento inserito.";
+        event.target.reset();
+        document.getElementById("duration").value = 60;
+      } catch (error) {
+        messageEl.textContent = "Non è stato possibile inserire l’appuntamento.";
+        console.error(error);
+      }
+    });
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      database = firebase.database();
+      eventsRef = database.ref("calendario/eventi");
+      statusEl.textContent = "Calendario online e sincronizzato.";
+      listenForEvents();
+    } catch (error) {
+      statusEl.textContent = "Configura Firebase nel codice per attivare il calendario online.";
+      console.error(error);
+    }
+  </script>
+</body>
+</html>
