@@ -31,6 +31,8 @@
       box-shadow: 0 2px 10px #0000000d;
     }
 
+    [hidden] { display: none !important; }
+
     .date-row {
       display: flex;
       align-items: center;
@@ -171,7 +173,14 @@
       color: #15803d;
     }
 
-    #message.error { color: #b91c1c; }
+    #message.error,
+    #loginMessage {
+      color: #b91c1c;
+    }
+
+    #loginMessage {
+      overflow-wrap: anywhere;
+    }
 
     .empty {
       color: #6b7280;
@@ -182,6 +191,15 @@
       color: #6b7280;
       font-size: .88rem;
       font-weight: 400;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
     }
 
     @media (max-width: 480px) {
@@ -207,105 +225,139 @@
 <body>
   <h1>Calendario condiviso</h1>
 
-  <section class="card">
-    <div class="date-row">
-      <button class="secondary" id="prevDay"
-        type="button" aria-label="Giorno precedente">←</button>
+  <!-- SCHERMATA DI ACCESSO -->
+  <section class="card" id="loginCard">
+    <h2>Accesso al calendario</h2>
+    <p>Inserisci la password per accedere.</p>
 
-      <input id="selectedDate" type="date"
-        aria-label="Seleziona il giorno">
+    <form id="loginForm">
+      <label for="loginPassword">Password</label>
 
-      <button class="secondary" id="nextDay"
-        type="button" aria-label="Giorno successivo">→</button>
-
-      <button class="secondary" id="today"
-        type="button">Oggi</button>
-    </div>
-
-    <h2 id="dayHeading"></h2>
-
-    <div class="legend">
-      <span>🔴 Personali</span>
-      <span>🟢 Lavoro</span>
-      <span>🔵 Bambini</span>
-    </div>
-
-    <p id="status" role="status" aria-live="polite">
-      Connessione a Firebase in corso…
-    </p>
-
-    <label for="eventFilter">Filtra gli eventi</label>
-    <select id="eventFilter">
-      <option value="tutti">Tutti gli eventi</option>
-      <option value="da-fare">Solo eventi da fare</option>
-      <option value="completati">Solo eventi completati</option>
-    </select>
-
-    <div id="events"></div>
-  </section>
-
-  <section class="card">
-    <h2>Inserisci un nuovo evento</h2>
-
-    <form id="eventForm">
-      <label for="title">Descrizione dell'evento</label>
       <input
-        id="title"
-        type="text"
-        placeholder="Es. Visita dal dentista"
-        required
-        maxlength="100"
-      >
-
-      <label for="category">Categoria</label>
-      <select id="category" required>
-        <option value="personale">🔴 Evento personale</option>
-        <option value="lavoro">🟢 Appuntamento di lavoro</option>
-        <option value="bambini">🔵 Evento riguardante i bambini</option>
-      </select>
-
-      <label for="time">Ora dell'evento</label>
-      <input id="time" type="time" required>
-
-      <label for="duration">Durata (in minuti)</label>
-      <input
-        id="duration"
-        type="number"
-        min="1"
-        step="1"
-        value="60"
+        id="loginPassword"
+        type="password"
+        placeholder="Inserisci la password"
+        autocomplete="current-password"
         required
       >
 
-      <label for="recurrence">Ripetizione dell'evento</label>
-      <select id="recurrence" required>
-        <option value="none">Nessuna ripetizione</option>
-        <option value="weekly">Ogni settimana</option>
-        <option value="monthly">Ogni mese</option>
-        <option value="yearly">Ogni anno</option>
-      </select>
+      <button id="loginButton" type="submit">Accedi</button>
 
-      <p class="hint">
-        Gli eventi ricorrenti si ripetono dalla data selezionata,
-        senza una data di fine. Puoi completarli separatamente
-        in ogni data.
-      </p>
-
-      <button id="submitButton" type="submit">
-        Aggiungi evento
-      </button>
-
-      <div id="message" role="status" aria-live="polite"></div>
+      <p id="loginMessage" role="alert" aria-live="polite"></p>
     </form>
   </section>
 
-  <!-- Firebase compat: non richiede import o bundler -->
+  <!-- CALENDARIO: VISIBILE SOLO DOPO L'AUTENTICAZIONE -->
+  <div id="calendarApp" hidden>
+
+    <section class="card">
+      <div class="date-row">
+        <button class="secondary" id="prevDay"
+          type="button" aria-label="Giorno precedente">←</button>
+
+        <input id="selectedDate" type="date"
+          aria-label="Seleziona il giorno">
+
+        <button class="secondary" id="nextDay"
+          type="button" aria-label="Giorno successivo">→</button>
+
+        <button class="secondary" id="today"
+          type="button">Oggi</button>
+      </div>
+
+      <h2 id="dayHeading"></h2>
+
+      <div class="legend">
+        <span>🔴 Personali</span>
+        <span>🟢 Lavoro</span>
+        <span>🔵 Bambini</span>
+      </div>
+
+      <p id="status" role="status" aria-live="polite">
+        Connessione a Firebase in corso…
+      </p>
+
+      <div class="toolbar">
+        <span>Calendario condiviso</span>
+        <button id="logoutButton" class="secondary" type="button">
+          Esci
+        </button>
+      </div>
+
+      <label for="eventFilter">Filtra gli eventi</label>
+      <select id="eventFilter">
+        <option value="tutti">Tutti gli eventi</option>
+        <option value="da-fare">Solo eventi da fare</option>
+        <option value="completati">Solo eventi completati</option>
+      </select>
+
+      <div id="events"></div>
+    </section>
+
+    <section class="card">
+      <h2>Inserisci un nuovo evento</h2>
+
+      <form id="eventForm">
+        <label for="title">Descrizione dell'evento</label>
+        <input
+          id="title"
+          type="text"
+          placeholder="Es. Visita dal dentista"
+          required
+          maxlength="100"
+        >
+
+        <label for="category">Categoria</label>
+        <select id="category" required>
+          <option value="personale">🔴 Evento personale</option>
+          <option value="lavoro">🟢 Appuntamento di lavoro</option>
+          <option value="bambini">🔵 Evento riguardante i bambini</option>
+        </select>
+
+        <label for="time">Ora dell'evento</label>
+        <input id="time" type="time" required>
+
+        <label for="duration">Durata (in minuti)</label>
+        <input
+          id="duration"
+          type="number"
+          min="1"
+          step="1"
+          value="60"
+          required
+        >
+
+        <label for="recurrence">Ripetizione dell'evento</label>
+        <select id="recurrence" required>
+          <option value="none">Nessuna ripetizione</option>
+          <option value="weekly">Ogni settimana</option>
+          <option value="monthly">Ogni mese</option>
+          <option value="yearly">Ogni anno</option>
+        </select>
+
+        <p class="hint">
+          Gli eventi ricorrenti si ripetono dalla data selezionata,
+          senza una data di fine. Puoi completarli separatamente
+          in ogni data.
+        </p>
+
+        <button id="submitButton" type="submit">
+          Aggiungi evento
+        </button>
+
+        <div id="message" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+  </div>
+
+  <!-- FIREBASE SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
   <script>
     // ==========================================
-    // 1. CONFIGURAZIONE DEL TUO PROGETTO FIREBASE
+    // 1. CONFIGURAZIONE FIREBASE
     // ==========================================
 
     const firebaseConfig = {
@@ -319,6 +371,11 @@
       measurementId: "G-8GMK029EPR"
     };
 
+    // Deve corrispondere all'utente creato in
+    // Firebase Authentication.
+    const LOGIN_EMAIL =
+      "calendario@calendario-condiviso-2235a.firebaseapp.com";
+
     // ==========================================
     // 2. ELEMENTI E VARIABILI
     // ==========================================
@@ -331,7 +388,16 @@
     const eventFilter = document.getElementById("eventFilter");
     const submitButton = document.getElementById("submitButton");
 
+    const loginCard = document.getElementById("loginCard");
+    const calendarApp = document.getElementById("calendarApp");
+    const loginForm = document.getElementById("loginForm");
+    const loginPassword = document.getElementById("loginPassword");
+    const loginButton = document.getElementById("loginButton");
+    const loginMessage = document.getElementById("loginMessage");
+    const logoutButton = document.getElementById("logoutButton");
+
     let database = null;
+    let auth = null;
     let eventsRef = null;
     let currentListener = null;
     let latestSnapshot = null;
@@ -370,9 +436,7 @@
     // ==========================================
 
     function occursOn(event, dateString) {
-      if (!event.date || dateString < event.date) {
-        return false;
-      }
+      if (!event.date || dateString < event.date) return false;
 
       const recurrence = event.recurrence || "none";
 
@@ -409,7 +473,7 @@
     }
 
     // ==========================================
-    // 5. COMPLETAMENTO DELLE SINGOLE OCCORRENZE
+    // 5. COMPLETAMENTO DEGLI EVENTI
     // ==========================================
 
     function isCompleted(event, occurrenceDate) {
@@ -423,8 +487,7 @@
         return completedDates[occurrenceDate] === true;
       }
 
-      // Compatibilità con gli eventi creati con la
-      // versione precedente del calendario.
+      // Compatibilità con la versione precedente.
       if (!event.recurrence || event.recurrence === "none") {
         return event.completed === true;
       }
@@ -433,7 +496,7 @@
     }
 
     async function toggleCompleted(event, occurrenceDate) {
-      if (!eventsRef) return;
+      if (!eventsRef || !auth.currentUser) return;
 
       const newStatus = !isCompleted(event, occurrenceDate);
 
@@ -448,13 +511,12 @@
           "Impossibile salvare il completamento. " +
           "Controlla la connessione e i permessi Firebase."
         );
-
         console.error("Errore completamento:", error);
       }
     }
 
     // ==========================================
-    // 6. MOSTRA GLI EVENTI E APPLICA IL FILTRO
+    // 6. VISUALIZZAZIONE DEGLI EVENTI
     // ==========================================
 
     function showEvents(snapshot) {
@@ -511,19 +573,16 @@
       for (const event of filteredEvents) {
         const occurrenceDate = selectedDate;
         const completed = isCompleted(event, occurrenceDate);
-
-        const item = document.createElement("div");
         const categories = ["personale", "lavoro", "bambini"];
 
         const category = categories.includes(event.category)
           ? event.category
           : "personale";
 
+        const item = document.createElement("div");
         item.className = `event ${category}`;
 
-        if (completed) {
-          item.classList.add("completed");
-        }
+        if (completed) item.classList.add("completed");
 
         item.tabIndex = 0;
         item.setAttribute("role", "button");
@@ -564,14 +623,12 @@
         const eventStatus = document.createElement("div");
         eventStatus.className = "event-status";
         eventStatus.textContent = completed ? "✓ Fatto" : "Da fare";
-
         info.appendChild(eventStatus);
 
         const removeButton = document.createElement("button");
         removeButton.className = "delete";
         removeButton.type = "button";
         removeButton.textContent = "Elimina";
-
         removeButton.setAttribute(
           "aria-label", `Elimina ${event.title}`
         );
@@ -625,7 +682,7 @@
     function listenForEvents() {
       updateHeading();
 
-      if (!eventsRef) return;
+      if (!eventsRef || !auth.currentUser) return;
 
       if (currentListener) {
         eventsRef.off("value", currentListener);
@@ -644,19 +701,14 @@
         "value",
         currentListener,
         error => {
-          statusEl.textContent =
-            "Errore Firebase: " + error.message;
-
+          statusEl.textContent = "Errore Firebase: " + error.message;
           console.error("Errore lettura Firebase:", error);
         }
       );
     }
 
-    // Il filtro usa l'ultimo snapshot ricevuto.
     eventFilter.addEventListener("change", () => {
-      if (latestSnapshot) {
-        showEvents(latestSnapshot);
-      }
+      if (latestSnapshot) showEvents(latestSnapshot);
     });
 
     // ==========================================
@@ -668,7 +720,6 @@
     document.getElementById("prevDay").addEventListener("click", () => {
       const date = parseLocalDate(dateInput.value);
       date.setDate(date.getDate() - 1);
-
       dateInput.value = localDateString(date);
       listenForEvents();
     });
@@ -676,7 +727,6 @@
     document.getElementById("nextDay").addEventListener("click", () => {
       const date = parseLocalDate(dateInput.value);
       date.setDate(date.getDate() + 1);
-
       dateInput.value = localDateString(date);
       listenForEvents();
     });
@@ -689,7 +739,7 @@
     dateInput.addEventListener("change", listenForEvents);
 
     // ==========================================
-    // 9. INSERIMENTO DI UN NUOVO EVENTO
+    // 9. INSERIMENTO DEGLI EVENTI
     // ==========================================
 
     eventForm.addEventListener("submit", async formEvent => {
@@ -698,8 +748,8 @@
       messageEl.textContent = "";
       messageEl.classList.remove("error");
 
-      if (!eventsRef) {
-        messageEl.textContent = "Firebase non è connesso.";
+      if (!eventsRef || !auth.currentUser) {
+        messageEl.textContent = "Devi accedere per salvare gli eventi.";
         messageEl.classList.add("error");
         return;
       }
@@ -709,9 +759,7 @@
         category: document.getElementById("category").value,
         date: dateInput.value,
         time: document.getElementById("time").value,
-        duration: Number(
-          document.getElementById("duration").value
-        ),
+        duration: Number(document.getElementById("duration").value),
         recurrence: document.getElementById("recurrence").value,
         completed: false,
         createdAt: Date.now()
@@ -741,7 +789,8 @@
         document.getElementById("recurrence").value = "none";
       } catch (error) {
         messageEl.textContent =
-          "Errore durante il salvataggio. Controlla Firebase.";
+          "Errore durante il salvataggio: " +
+          (error.code || error.message);
 
         messageEl.classList.add("error");
         console.error("Errore inserimento:", error);
@@ -751,7 +800,7 @@
     });
 
     // ==========================================
-    // 10. AVVIO FIREBASE
+    // 10. LOGIN, LOGOUT E AVVIO FIREBASE
     // ==========================================
 
     try {
@@ -759,15 +808,90 @@
         firebase.initializeApp(firebaseConfig);
       }
 
+      auth = firebase.auth();
       database = firebase.database();
       eventsRef = database.ref("calendario/eventi");
 
-      listenForEvents();
+      loginForm.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        loginMessage.textContent = "";
+        loginButton.disabled = true;
+
+        try {
+          await auth.signInWithEmailAndPassword(
+            LOGIN_EMAIL,
+            loginPassword.value
+          );
+
+          loginPassword.value = "";
+        } catch (error) {
+          console.error("Errore login:", error);
+
+          if (
+            error.code === "auth/invalid-credential" ||
+            error.code === "auth/wrong-password" ||
+            error.code === "auth/user-not-found"
+          ) {
+            loginMessage.textContent =
+              "Password errata oppure utente non creato in Firebase.";
+          } else if (error.code === "auth/too-many-requests") {
+            loginMessage.textContent =
+              "Troppi tentativi. Riprova più tardi.";
+          } else {
+            loginMessage.textContent =
+              "Errore di accesso: " + error.message;
+          }
+        } finally {
+          loginButton.disabled = false;
+        }
+      });
+
+      logoutButton.addEventListener("click", async () => {
+        try {
+          if (currentListener && eventsRef) {
+            eventsRef.off("value", currentListener);
+            currentListener = null;
+          }
+
+          await auth.signOut();
+          eventsContainer.replaceChildren();
+          latestSnapshot = null;
+          loginPassword.value = "";
+          loginMessage.textContent = "";
+        } catch (error) {
+          console.error("Errore uscita:", error);
+          alert("Impossibile uscire: " + error.message);
+        }
+      });
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          loginCard.hidden = true;
+          calendarApp.hidden = false;
+          loginMessage.textContent = "";
+          listenForEvents();
+        } else {
+          if (currentListener && eventsRef) {
+            eventsRef.off("value", currentListener);
+            currentListener = null;
+          }
+
+          latestSnapshot = null;
+          eventsContainer.replaceChildren();
+          calendarApp.hidden = true;
+          loginCard.hidden = false;
+          statusEl.textContent = "Accedi per utilizzare il calendario.";
+        }
+      }, error => {
+        loginMessage.textContent =
+          "Errore di autenticazione: " + error.message;
+        console.error("Errore autenticazione:", error);
+      });
 
     } catch (error) {
-      statusEl.textContent =
+      loginMessage.textContent =
         "Errore durante l'avvio di Firebase: " + error.message;
-
       console.error("Errore avvio Firebase:", error);
     }
   </script>
