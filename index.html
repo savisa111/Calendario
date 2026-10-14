@@ -13,9 +13,7 @@
       background: #f3f4f6;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       max-width: 760px;
@@ -23,9 +21,7 @@
       padding: 24px 16px;
     }
 
-    h1 {
-      margin: 0 0 20px;
-    }
+    h1 { margin: 0 0 20px; }
 
     .card {
       background: white;
@@ -38,17 +34,12 @@
     .date-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
-    .date-row input {
-      flex: 1;
-      min-width: 0;
-    }
+    .date-row input { flex: 1; min-width: 0; }
 
-    input,
-    select,
-    button {
+    input, select, button {
       font: inherit;
       padding: 10px 12px;
       border: 1px solid #d1d5db;
@@ -62,15 +53,14 @@
       border: 0;
     }
 
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
     button.secondary {
       background: #e5e7eb;
       color: #111827;
-    }
-
-    button:focus-visible,
-    .event:focus-visible {
-      outline: 3px solid #93c5fd;
-      outline-offset: 3px;
     }
 
     form {
@@ -84,17 +74,32 @@
       font-weight: 600;
     }
 
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      color: #4b5563;
+      font-size: .9rem;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-top: 18px;
+    }
+
     .event {
       border-left: 6px solid;
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 12px;
       margin: 10px 0;
       display: flex;
       justify-content: space-between;
-      gap: 12px;
       align-items: center;
+      gap: 12px;
       cursor: pointer;
-      transition: opacity 0.2s, box-shadow 0.2s;
+      transition: opacity .2s, box-shadow .2s;
     }
 
     .event:hover {
@@ -125,25 +130,21 @@
       overflow-wrap: anywhere;
     }
 
-    .event-title {
-      font-weight: 700;
-    }
+    .event-title { font-weight: 700; }
 
     .event-details {
       color: inherit;
-      font-size: 0.95rem;
+      font-size: .93rem;
       margin-top: 3px;
     }
 
     .event-status {
-      font-size: 0.85rem;
+      font-size: .85rem;
       font-weight: 700;
       margin-top: 5px;
     }
 
-    .event.completed {
-      opacity: 0.65;
-    }
+    .event.completed { opacity: .65; }
 
     .event.completed .event-title,
     .event.completed .event-details {
@@ -151,34 +152,26 @@
     }
 
     .delete {
+      flex-shrink: 0;
       background: #fee2e2;
       color: #991b1b;
       padding: 7px 10px;
-      flex-shrink: 0;
     }
 
-    .delete:hover {
-      background: #fecaca;
+    .delete:hover { background: #fecaca; }
+
+    #status {
+      color: #6b7280;
+      font-size: .9rem;
     }
 
     #message {
       min-height: 24px;
+      font-weight: 600;
       color: #15803d;
-      font-weight: 700;
     }
 
-    #status {
-      color: #6b7280;
-      font-size: 0.9rem;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      color: #4b5563;
-      font-size: 0.9rem;
-    }
+    #message.error { color: #b91c1c; }
 
     .empty {
       color: #6b7280;
@@ -186,27 +179,14 @@
     }
 
     @media (max-width: 480px) {
-      .date-row {
-        flex-wrap: wrap;
-      }
-
+      .date-row { flex-wrap: wrap; }
       .date-row input {
         flex-basis: 100%;
         order: -1;
       }
-
-      .card {
-        padding: 16px;
-      }
-
-      .event {
-        padding: 10px;
-        gap: 8px;
-      }
-
-      .delete {
-        padding: 7px 8px;
-      }
+      .card { padding: 16px; }
+      .event { gap: 8px; padding: 10px; }
+      .delete { padding: 7px 8px; }
     }
   </style>
 </head>
@@ -216,31 +196,17 @@
 
   <section class="card">
     <div class="date-row">
-      <button
-        class="secondary"
-        id="prevDay"
-        type="button"
-        aria-label="Giorno precedente"
-      >←</button>
+      <button class="secondary" id="prevDay"
+        type="button" aria-label="Giorno precedente">←</button>
 
-      <input
-        id="selectedDate"
-        type="date"
-        aria-label="Seleziona il giorno"
-      >
+      <input id="selectedDate" type="date"
+        aria-label="Seleziona il giorno">
 
-      <button
-        class="secondary"
-        id="nextDay"
-        type="button"
-        aria-label="Giorno successivo"
-      >→</button>
+      <button class="secondary" id="nextDay"
+        type="button" aria-label="Giorno successivo">→</button>
 
-      <button
-        class="secondary"
-        id="today"
-        type="button"
-      >Oggi</button>
+      <button class="secondary" id="today"
+        type="button">Oggi</button>
     </div>
 
     <h2 id="dayHeading"></h2>
@@ -255,6 +221,15 @@
       Connessione al calendario…
     </p>
 
+    <div class="filters">
+      <label for="eventFilter">Filtra gli eventi</label>
+      <select id="eventFilter">
+        <option value="tutti">Tutti gli eventi</option>
+        <option value="da-fare">Solo eventi da fare</option>
+        <option value="completati">Solo eventi completati</option>
+      </select>
+    </div>
+
     <div id="events"></div>
   </section>
 
@@ -262,57 +237,50 @@
     <h2>Inserisci un nuovo evento</h2>
 
     <form id="eventForm">
-      <label>
-        Descrizione dell'evento
-        <input
-          id="title"
-          type="text"
-          placeholder="Es. Visita dal dentista"
-          required
-          maxlength="100"
-        >
-      </label>
+      <label for="title">Descrizione dell'evento</label>
+      <input id="title" type="text"
+        placeholder="Es. Visita dal dentista"
+        required maxlength="100">
 
-      <label>
-        Categoria
-        <select id="category" required>
-          <option value="personale">🔴 Evento personale</option>
-          <option value="lavoro">🟢 Appuntamento di lavoro</option>
-          <option value="bambini">🔵 Evento riguardante i bambini</option>
-        </select>
-      </label>
+      <label for="category">Categoria</label>
+      <select id="category" required>
+        <option value="personale">🔴 Evento personale</option>
+        <option value="lavoro">🟢 Appuntamento di lavoro</option>
+        <option value="bambini">🔵 Evento riguardante i bambini</option>
+      </select>
 
-      <label>
-        Ora dell'evento
-        <input id="time" type="time" required>
-      </label>
+      <label for="time">Ora dell'evento</label>
+      <input id="time" type="time" required>
 
-      <label>
-        Durata (in minuti)
-        <input
-          id="duration"
-          type="number"
-          min="1"
-          step="1"
-          value="60"
-          required
-        >
-      </label>
+      <label for="duration">Durata (in minuti)</label>
+      <input id="duration" type="number"
+        min="1" step="1" value="60" required>
 
-      <button type="submit">Aggiungi evento</button>
+      <label for="recurrence">Ripetizione dell'evento</label>
+      <select id="recurrence" required>
+        <option value="none">Nessuna ripetizione</option>
+        <option value="weekly">Ogni settimana</option>
+        <option value="monthly">Ogni mese</option>
+        <option value="yearly">Ogni anno</option>
+      </select>
+
+      <button id="submitButton" type="submit">
+        Aggiungi evento
+      </button>
 
       <div id="message" role="status" aria-live="polite"></div>
     </form>
   </section>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase Realtime Database SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
   <script>
     // ==========================================
-    // CONFIGURAZIONE FIREBASE
-    // Inserisci qui i dati REALI del tuo progetto.
+    // 1. CONFIGURAZIONE FIREBASE
+    // Inserisci i dati REALI del tuo progetto.
+    // Non creare un nuovo progetto.
     // ==========================================
 
     const firebaseConfig = {
@@ -324,7 +292,7 @@
     };
 
     // ==========================================
-    // ELEMENTI DELLA PAGINA
+    // 2. ELEMENTI E STATO
     // ==========================================
 
     const dateInput = document.getElementById("selectedDate");
@@ -332,13 +300,16 @@
     const statusEl = document.getElementById("status");
     const messageEl = document.getElementById("message");
     const eventForm = document.getElementById("eventForm");
+    const eventFilter = document.getElementById("eventFilter");
+    const submitButton = document.getElementById("submitButton");
 
     let database = null;
     let eventsRef = null;
     let currentListener = null;
+    let latestSnapshot = null;
 
     // ==========================================
-    // FUNZIONI PER LE DATE
+    // 3. DATE LOCALI
     // ==========================================
 
     function localDateString(date) {
@@ -349,10 +320,13 @@
       return `${year}-${month}-${day}`;
     }
 
+    function parseLocalDate(value) {
+      const [year, month, day] = value.split("-").map(Number);
+      return new Date(year, month - 1, day, 12, 0, 0);
+    }
+
     function updateHeading() {
       if (!dateInput.value) return;
-
-      const date = new Date(dateInput.value + "T12:00:00");
 
       document.getElementById("dayHeading").textContent =
         new Intl.DateTimeFormat("it-IT", {
@@ -360,22 +334,124 @@
           day: "numeric",
           month: "long",
           year: "numeric"
-        }).format(date);
+        }).format(parseLocalDate(dateInput.value));
     }
 
     // ==========================================
-    // VISUALIZZAZIONE DEGLI EVENTI
+    // 4. RICORRENZE
+    // ==========================================
+
+    function occursOn(event, dateString) {
+      // La data originale è la prima occorrenza.
+      if (!event.date || dateString < event.date) {
+        return false;
+      }
+
+      const recurrence = event.recurrence || "none";
+
+      if (recurrence === "none") {
+        return dateString === event.date;
+      }
+
+      const originalDate = parseLocalDate(event.date);
+      const targetDate = parseLocalDate(dateString);
+
+      if (recurrence === "weekly") {
+        // Stesso giorno della settimana.
+        return originalDate.getDay() === targetDate.getDay();
+      }
+
+      if (recurrence === "monthly") {
+        // Stesso giorno del mese.
+        // Se il giorno non esiste in un mese, l'evento
+        // non viene mostrato in quel mese.
+        return originalDate.getDate() === targetDate.getDate();
+      }
+
+      if (recurrence === "yearly") {
+        // Stesso giorno e mese ogni anno.
+        return originalDate.getDate() === targetDate.getDate()
+          && originalDate.getMonth() === targetDate.getMonth();
+      }
+
+      return dateString === event.date;
+    }
+
+    function recurrenceLabel(recurrence) {
+      switch (recurrence) {
+        case "weekly": return "Ogni settimana";
+        case "monthly": return "Ogni mese";
+        case "yearly": return "Ogni anno";
+        default: return "";
+      }
+    }
+
+    // ==========================================
+    // 5. STATO DI COMPLETAMENTO PER OCCORRENZA
+    // ==========================================
+
+    function isCompleted(event, occurrenceDate) {
+      const completedDates = event.completedDates || {};
+
+      // Se esiste uno stato specifico per questa data,
+      // prevale sul vecchio campo completed.
+      if (
+        Object.prototype.hasOwnProperty.call(
+          completedDates, occurrenceDate
+        )
+      ) {
+        return completedDates[occurrenceDate] === true;
+      }
+
+      // Compatibilità con gli eventi creati in precedenza.
+      if (!event.recurrence || event.recurrence === "none") {
+        return event.completed === true;
+      }
+
+      return false;
+    }
+
+    async function toggleCompleted(event, occurrenceDate) {
+      if (!eventsRef) return;
+
+      const completed = isCompleted(event, occurrenceDate);
+      const newStatus = !completed;
+
+      try {
+        // Salva il completamento per la singola data.
+        // Le altre occorrenze non vengono modificate.
+        await eventsRef.child(event.id)
+          .child("completedDates")
+          .child(occurrenceDate)
+          .set(newStatus);
+      } catch (error) {
+        alert(
+          "Impossibile salvare il completamento. " +
+          "Controlla la connessione e i permessi Firebase."
+        );
+        console.error("Errore completamento:", error);
+      }
+    }
+
+    // ==========================================
+    // 6. FILTRO E VISUALIZZAZIONE
     // ==========================================
 
     function showEvents(snapshot) {
       eventsContainer.replaceChildren();
 
+      if (!snapshot) return;
+
+      const selectedDate = dateInput.value;
+      const filter = eventFilter.value;
       const events = [];
 
       snapshot.forEach(child => {
         const event = child.val();
 
-        if (event && event.date === dateInput.value) {
+        if (!event || !event.title || !event.date) return;
+
+        if (occursOn(event, selectedDate)) {
           events.push({
             id: child.key,
             ...event
@@ -383,65 +459,71 @@
         }
       });
 
-      // Ordina gli eventi in base all'ora.
-      events.sort((a, b) => {
-        return (a.time || "").localeCompare(b.time || "");
+      events.sort((a, b) =>
+        (a.time || "").localeCompare(b.time || "")
+      );
+
+      const filteredEvents = events.filter(event => {
+        const completed = isCompleted(event, selectedDate);
+
+        if (filter === "da-fare") return !completed;
+        if (filter === "completati") return completed;
+
+        return true;
       });
 
-      if (events.length === 0) {
+      if (filteredEvents.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty";
-        empty.textContent = "Nessun evento per questo giorno.";
+
+        if (events.length === 0) {
+          empty.textContent = "Nessun evento per questo giorno.";
+        } else if (filter === "da-fare") {
+          empty.textContent = "Non ci sono eventi da fare.";
+        } else {
+          empty.textContent = "Non ci sono eventi completati.";
+        }
+
         eventsContainer.appendChild(empty);
         return;
       }
 
-      for (const event of events) {
+      for (const event of filteredEvents) {
+        const occurrenceDate = selectedDate;
+        const completed = isCompleted(event, occurrenceDate);
+
         const item = document.createElement("div");
-
-        const validCategories = [
-          "personale",
-          "lavoro",
-          "bambini"
-        ];
-
-        const category = validCategories.includes(event.category)
+        const categories = ["personale", "lavoro", "bambini"];
+        const category = categories.includes(event.category)
           ? event.category
           : "personale";
 
         item.className = `event ${category}`;
 
-        // Lo stato completato viene letto da Firebase.
-        const completed = event.completed === true;
-
         if (completed) {
           item.classList.add("completed");
         }
 
-        // Rende l'intera scheda cliccabile.
         item.tabIndex = 0;
         item.setAttribute("role", "button");
-        item.setAttribute(
-          "aria-pressed",
-          completed ? "true" : "false"
-        );
+        item.setAttribute("aria-pressed", String(completed));
 
         item.setAttribute(
           "aria-label",
-          `${event.title}. ${completed ? "Completato" : "Da fare"}. Clicca per cambiare stato.`
+          `${event.title}. ${completed ? "Completato" : "Da fare"}. ` +
+          "Premi Invio o clicca per cambiare stato."
         );
 
         item.title = completed
           ? "Clicca per segnare come da fare"
           : "Clicca per segnare come fatto";
 
-        // Contenitore delle informazioni.
         const info = document.createElement("div");
         info.className = "event-info";
 
         const title = document.createElement("div");
         title.className = "event-title";
-        title.textContent = event.title || "Evento senza titolo";
+        title.textContent = event.title;
 
         const details = document.createElement("div");
         details.className = "event-details";
@@ -450,46 +532,53 @@
 
         info.append(title, details);
 
-        // Indicatore di completamento.
+        const repeat = recurrenceLabel(event.recurrence);
+        if (repeat) {
+          const repeatInfo = document.createElement("div");
+          repeatInfo.className = "event-details";
+          repeatInfo.textContent = `↻ ${repeat}`;
+          info.appendChild(repeatInfo);
+        }
+
         const eventStatus = document.createElement("div");
         eventStatus.className = "event-status";
-        eventStatus.textContent = completed
-          ? "✓ Fatto"
-          : "Da fare";
-
+        eventStatus.textContent = completed ? "✓ Fatto" : "Da fare";
         info.appendChild(eventStatus);
 
-        // Pulsante per eliminare l'evento.
+        // Il pulsante Elimina cancella l'intera serie
+        // se l'evento è ricorrente.
         const removeButton = document.createElement("button");
         removeButton.className = "delete";
         removeButton.type = "button";
         removeButton.textContent = "Elimina";
-
         removeButton.setAttribute(
-          "aria-label",
-          `Elimina ${event.title || "evento"}`
+          "aria-label", `Elimina ${event.title}`
         );
 
-        // Evita che Elimina attivi anche il completamento.
         removeButton.addEventListener("click", async clickEvent => {
           clickEvent.stopPropagation();
 
-          if (confirm(`Vuoi eliminare "${event.title}"?`)) {
-            try {
-              await eventsRef.child(event.id).remove();
-            } catch (error) {
-              alert("Non è stato possibile eliminare l'evento.");
-              console.error(error);
-            }
+          const recurring =
+            event.recurrence && event.recurrence !== "none";
+
+          const question = recurring
+            ? `Vuoi eliminare "${event.title}" e tutte le sue ripetizioni?`
+            : `Vuoi eliminare "${event.title}"?`;
+
+          if (!confirm(question)) return;
+
+          try {
+            await eventsRef.child(event.id).remove();
+          } catch (error) {
+            alert("Impossibile eliminare l'evento.");
+            console.error(error);
           }
         });
 
-        // Clic sulla scheda: cambia lo stato.
         item.addEventListener("click", () => {
-          toggleCompleted(event);
+          toggleCompleted(event, occurrenceDate);
         });
 
-        // Supporta anche tastiera: Invio e barra spaziatrice.
         item.addEventListener("keydown", keyboardEvent => {
           if (
             keyboardEvent.target === item &&
@@ -499,7 +588,7 @@
             )
           ) {
             keyboardEvent.preventDefault();
-            toggleCompleted(event);
+            toggleCompleted(event, occurrenceDate);
           }
         });
 
@@ -509,30 +598,7 @@
     }
 
     // ==========================================
-    // COMPLETAMENTO / ANNULLAMENTO EVENTO
-    // ==========================================
-
-    async function toggleCompleted(event) {
-      if (!eventsRef) return;
-
-      const newStatus = event.completed !== true;
-
-      try {
-        await eventsRef.child(event.id).update({
-          completed: newStatus
-        });
-      } catch (error) {
-        alert(
-          "Non è stato possibile salvare lo stato dell'evento. " +
-          "Controlla la connessione e i permessi Firebase."
-        );
-
-        console.error(error);
-      }
-    }
-
-    // ==========================================
-    // SINCRONIZZAZIONE CON FIREBASE
+    // 7. ASCOLTO IN TEMPO REALE FIREBASE
     // ==========================================
 
     function listenForEvents() {
@@ -545,6 +611,7 @@
       }
 
       currentListener = snapshot => {
+        latestSnapshot = snapshot;
         showEvents(snapshot);
         statusEl.textContent = "Calendario online e sincronizzato.";
       };
@@ -554,29 +621,33 @@
         currentListener,
         error => {
           statusEl.textContent =
-            "Errore di connessione: " + error.message;
+            "Errore Firebase: " + error.message;
+          console.error("Errore lettura Firebase:", error);
         }
       );
     }
 
+    // Cambia filtro senza creare un nuovo listener Firebase.
+    eventFilter.addEventListener("change", () => {
+      if (latestSnapshot) showEvents(latestSnapshot);
+    });
+
     // ==========================================
-    // NAVIGAZIONE TRA I GIORNI
+    // 8. NAVIGAZIONE TRA I GIORNI
     // ==========================================
 
     dateInput.value = localDateString(new Date());
 
     document.getElementById("prevDay").addEventListener("click", () => {
-      const date = new Date(dateInput.value + "T12:00:00");
+      const date = parseLocalDate(dateInput.value);
       date.setDate(date.getDate() - 1);
-
       dateInput.value = localDateString(date);
       listenForEvents();
     });
 
     document.getElementById("nextDay").addEventListener("click", () => {
-      const date = new Date(dateInput.value + "T12:00:00");
+      const date = parseLocalDate(dateInput.value);
       date.setDate(date.getDate() + 1);
-
       dateInput.value = localDateString(date);
       listenForEvents();
     });
@@ -589,15 +660,18 @@
     dateInput.addEventListener("change", listenForEvents);
 
     // ==========================================
-    // INSERIMENTO DI UN NUOVO EVENTO
+    // 9. INSERIMENTO NUOVI EVENTI
     // ==========================================
 
-    eventForm.addEventListener("submit", async event => {
-      event.preventDefault();
+    eventForm.addEventListener("submit", async formEvent => {
+      formEvent.preventDefault();
+
       messageEl.textContent = "";
+      messageEl.classList.remove("error");
 
       if (!eventsRef) {
         messageEl.textContent = "Firebase non è connesso.";
+        messageEl.classList.add("error");
         return;
       }
 
@@ -609,7 +683,9 @@
         duration: Number(
           document.getElementById("duration").value
         ),
-        completed: false
+        recurrence: document.getElementById("recurrence").value,
+        completed: false,
+        createdAt: Date.now()
       };
 
       if (
@@ -620,40 +696,54 @@
         newEvent.duration < 1
       ) {
         messageEl.textContent = "Controlla i dati inseriti.";
+        messageEl.classList.add("error");
         return;
       }
+
+      submitButton.disabled = true;
 
       try {
         await eventsRef.push(newEvent);
 
-        messageEl.textContent = "Appuntamento inserito.";
+        messageEl.textContent = "Appuntamento inserito correttamente.";
 
         eventForm.reset();
         document.getElementById("duration").value = 60;
+        document.getElementById("recurrence").value = "none";
       } catch (error) {
         messageEl.textContent =
-          "Non è stato possibile inserire l'appuntamento.";
-
-        console.error(error);
+          "Errore durante il salvataggio. Controlla Firebase.";
+        messageEl.classList.add("error");
+        console.error("Errore inserimento:", error);
+      } finally {
+        submitButton.disabled = false;
       }
     });
 
     // ==========================================
-    // AVVIO DI FIREBASE
+    // 10. AVVIO FIREBASE
     // ==========================================
 
     try {
       const configIsValid =
-        firebaseConfig.apiKey !== "INSERISCI_LA_TUA_API_KEY" &&
-        firebaseConfig.projectId !== "INSERISCI_IL_TUO_PROGETTO" &&
-        firebaseConfig.appId !== "INSERISCI_IL_TUO_APP_ID" &&
-        firebaseConfig.databaseURL.includes("-default-rtdb.firebaseio.com");
+        firebaseConfig.apiKey &&
+        firebaseConfig.authDomain &&
+        firebaseConfig.databaseURL &&
+        firebaseConfig.projectId &&
+        firebaseConfig.appId &&
+        !firebaseConfig.apiKey.includes("INSERISCI_") &&
+        !firebaseConfig.authDomain.includes("INSERISCI_") &&
+        !firebaseConfig.databaseURL.includes("INSERISCI_") &&
+        !firebaseConfig.projectId.includes("INSERISCI_") &&
+        !firebaseConfig.appId.includes("INSERISCI_");
 
       if (!configIsValid) {
         statusEl.textContent =
-          "Inserisci i dati reali di Firebase nella configurazione.";
+          "Configura i dati reali del tuo progetto Firebase nel codice.";
       } else {
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
 
         database = firebase.database();
         eventsRef = database.ref("calendario/eventi");
@@ -662,9 +752,8 @@
       }
     } catch (error) {
       statusEl.textContent =
-        "Errore durante l'avvio di Firebase. Controlla la configurazione.";
-
-      console.error(error);
+        "Errore durante l'avvio di Firebase: " + error.message;
+      console.error("Errore avvio Firebase:", error);
     }
   </script>
 </body>
