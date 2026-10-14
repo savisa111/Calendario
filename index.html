@@ -37,7 +37,10 @@
       gap: 10px;
     }
 
-    .date-row input { flex: 1; min-width: 0; }
+    .date-row input {
+      flex: 1;
+      min-width: 0;
+    }
 
     input, select, button {
       font: inherit;
@@ -46,11 +49,14 @@
       border-radius: 8px;
     }
 
+    input, select { width: 100%; }
+
     button {
       cursor: pointer;
       background: #2563eb;
       color: white;
       border: 0;
+      width: auto;
     }
 
     button:disabled {
@@ -80,13 +86,6 @@
       gap: 14px;
       color: #4b5563;
       font-size: .9rem;
-    }
-
-    .filters {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 6px;
-      margin-top: 18px;
     }
 
     .event {
@@ -163,6 +162,7 @@
     #status {
       color: #6b7280;
       font-size: .9rem;
+      overflow-wrap: anywhere;
     }
 
     #message {
@@ -178,14 +178,27 @@
       padding: 12px 0;
     }
 
+    .hint {
+      color: #6b7280;
+      font-size: .88rem;
+      font-weight: 400;
+    }
+
     @media (max-width: 480px) {
       .date-row { flex-wrap: wrap; }
+
       .date-row input {
         flex-basis: 100%;
         order: -1;
       }
+
       .card { padding: 16px; }
-      .event { gap: 8px; padding: 10px; }
+
+      .event {
+        gap: 8px;
+        padding: 10px;
+      }
+
       .delete { padding: 7px 8px; }
     }
   </style>
@@ -218,17 +231,15 @@
     </div>
 
     <p id="status" role="status" aria-live="polite">
-      Connessione al calendario…
+      Connessione a Firebase in corso…
     </p>
 
-    <div class="filters">
-      <label for="eventFilter">Filtra gli eventi</label>
-      <select id="eventFilter">
-        <option value="tutti">Tutti gli eventi</option>
-        <option value="da-fare">Solo eventi da fare</option>
-        <option value="completati">Solo eventi completati</option>
-      </select>
-    </div>
+    <label for="eventFilter">Filtra gli eventi</label>
+    <select id="eventFilter">
+      <option value="tutti">Tutti gli eventi</option>
+      <option value="da-fare">Solo eventi da fare</option>
+      <option value="completati">Solo eventi completati</option>
+    </select>
 
     <div id="events"></div>
   </section>
@@ -238,9 +249,13 @@
 
     <form id="eventForm">
       <label for="title">Descrizione dell'evento</label>
-      <input id="title" type="text"
+      <input
+        id="title"
+        type="text"
         placeholder="Es. Visita dal dentista"
-        required maxlength="100">
+        required
+        maxlength="100"
+      >
 
       <label for="category">Categoria</label>
       <select id="category" required>
@@ -253,8 +268,14 @@
       <input id="time" type="time" required>
 
       <label for="duration">Durata (in minuti)</label>
-      <input id="duration" type="number"
-        min="1" step="1" value="60" required>
+      <input
+        id="duration"
+        type="number"
+        min="1"
+        step="1"
+        value="60"
+        required
+      >
 
       <label for="recurrence">Ripetizione dell'evento</label>
       <select id="recurrence" required>
@@ -264,6 +285,12 @@
         <option value="yearly">Ogni anno</option>
       </select>
 
+      <p class="hint">
+        Gli eventi ricorrenti si ripetono dalla data selezionata,
+        senza una data di fine. Puoi completarli separatamente
+        in ogni data.
+      </p>
+
       <button id="submitButton" type="submit">
         Aggiungi evento
       </button>
@@ -272,27 +299,28 @@
     </form>
   </section>
 
-  <!-- Firebase Realtime Database SDK -->
+  <!-- Firebase compat: non richiede import o bundler -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
   <script>
     // ==========================================
-    // 1. CONFIGURAZIONE FIREBASE
-    // Inserisci i dati REALI del tuo progetto.
-    // Non creare un nuovo progetto.
+    // 1. CONFIGURAZIONE DEL TUO PROGETTO FIREBASE
     // ==========================================
 
     const firebaseConfig = {
-      apiKey: "INSERISCI_LA_TUA_API_KEY",
-      authDomain: "INSERISCI_IL_TUO_PROGETTO.firebaseapp.com",
-      databaseURL: "https://INSERISCI_IL_TUO_PROGETTO-default-rtdb.firebaseio.com",
-      projectId: "INSERISCI_IL_TUO_PROGETTO",
-      appId: "INSERISCI_IL_TUO_APP_ID"
+      apiKey: "AIzaSyCzr5suVS8q99U8JXdg5maA8wwp7ZGiAzg",
+      authDomain: "calendario-condiviso-2235a.firebaseapp.com",
+      databaseURL: "https://calendario-condiviso-2235a-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "calendario-condiviso-2235a",
+      storageBucket: "calendario-condiviso-2235a.firebasestorage.app",
+      messagingSenderId: "156410352687",
+      appId: "1:156410352687:web:db4b50d3a5cd7acdd9a2da",
+      measurementId: "G-8GMK029EPR"
     };
 
     // ==========================================
-    // 2. ELEMENTI E STATO
+    // 2. ELEMENTI E VARIABILI
     // ==========================================
 
     const dateInput = document.getElementById("selectedDate");
@@ -338,11 +366,10 @@
     }
 
     // ==========================================
-    // 4. RICORRENZE
+    // 4. CALCOLO DELLE RICORRENZE
     // ==========================================
 
     function occursOn(event, dateString) {
-      // La data originale è la prima occorrenza.
       if (!event.date || dateString < event.date) {
         return false;
       }
@@ -357,19 +384,14 @@
       const targetDate = parseLocalDate(dateString);
 
       if (recurrence === "weekly") {
-        // Stesso giorno della settimana.
         return originalDate.getDay() === targetDate.getDay();
       }
 
       if (recurrence === "monthly") {
-        // Stesso giorno del mese.
-        // Se il giorno non esiste in un mese, l'evento
-        // non viene mostrato in quel mese.
         return originalDate.getDate() === targetDate.getDate();
       }
 
       if (recurrence === "yearly") {
-        // Stesso giorno e mese ogni anno.
         return originalDate.getDate() === targetDate.getDate()
           && originalDate.getMonth() === targetDate.getMonth();
       }
@@ -387,14 +409,12 @@
     }
 
     // ==========================================
-    // 5. STATO DI COMPLETAMENTO PER OCCORRENZA
+    // 5. COMPLETAMENTO DELLE SINGOLE OCCORRENZE
     // ==========================================
 
     function isCompleted(event, occurrenceDate) {
       const completedDates = event.completedDates || {};
 
-      // Se esiste uno stato specifico per questa data,
-      // prevale sul vecchio campo completed.
       if (
         Object.prototype.hasOwnProperty.call(
           completedDates, occurrenceDate
@@ -403,7 +423,8 @@
         return completedDates[occurrenceDate] === true;
       }
 
-      // Compatibilità con gli eventi creati in precedenza.
+      // Compatibilità con gli eventi creati con la
+      // versione precedente del calendario.
       if (!event.recurrence || event.recurrence === "none") {
         return event.completed === true;
       }
@@ -414,13 +435,11 @@
     async function toggleCompleted(event, occurrenceDate) {
       if (!eventsRef) return;
 
-      const completed = isCompleted(event, occurrenceDate);
-      const newStatus = !completed;
+      const newStatus = !isCompleted(event, occurrenceDate);
 
       try {
-        // Salva il completamento per la singola data.
-        // Le altre occorrenze non vengono modificate.
-        await eventsRef.child(event.id)
+        await eventsRef
+          .child(event.id)
           .child("completedDates")
           .child(occurrenceDate)
           .set(newStatus);
@@ -429,12 +448,13 @@
           "Impossibile salvare il completamento. " +
           "Controlla la connessione e i permessi Firebase."
         );
+
         console.error("Errore completamento:", error);
       }
     }
 
     // ==========================================
-    // 6. FILTRO E VISUALIZZAZIONE
+    // 6. MOSTRA GLI EVENTI E APPLICA IL FILTRO
     // ==========================================
 
     function showEvents(snapshot) {
@@ -494,6 +514,7 @@
 
         const item = document.createElement("div");
         const categories = ["personale", "lavoro", "bambini"];
+
         const category = categories.includes(event.category)
           ? event.category
           : "personale";
@@ -507,7 +528,6 @@
         item.tabIndex = 0;
         item.setAttribute("role", "button");
         item.setAttribute("aria-pressed", String(completed));
-
         item.setAttribute(
           "aria-label",
           `${event.title}. ${completed ? "Completato" : "Da fare"}. ` +
@@ -533,6 +553,7 @@
         info.append(title, details);
 
         const repeat = recurrenceLabel(event.recurrence);
+
         if (repeat) {
           const repeatInfo = document.createElement("div");
           repeatInfo.className = "event-details";
@@ -543,14 +564,14 @@
         const eventStatus = document.createElement("div");
         eventStatus.className = "event-status";
         eventStatus.textContent = completed ? "✓ Fatto" : "Da fare";
+
         info.appendChild(eventStatus);
 
-        // Il pulsante Elimina cancella l'intera serie
-        // se l'evento è ricorrente.
         const removeButton = document.createElement("button");
         removeButton.className = "delete";
         removeButton.type = "button";
         removeButton.textContent = "Elimina";
+
         removeButton.setAttribute(
           "aria-label", `Elimina ${event.title}`
         );
@@ -571,7 +592,7 @@
             await eventsRef.child(event.id).remove();
           } catch (error) {
             alert("Impossibile eliminare l'evento.");
-            console.error(error);
+            console.error("Errore eliminazione:", error);
           }
         });
 
@@ -598,7 +619,7 @@
     }
 
     // ==========================================
-    // 7. ASCOLTO IN TEMPO REALE FIREBASE
+    // 7. SINCRONIZZAZIONE FIREBASE
     // ==========================================
 
     function listenForEvents() {
@@ -609,6 +630,9 @@
       if (currentListener) {
         eventsRef.off("value", currentListener);
       }
+
+      latestSnapshot = null;
+      statusEl.textContent = "Connessione a Firebase in corso…";
 
       currentListener = snapshot => {
         latestSnapshot = snapshot;
@@ -622,14 +646,17 @@
         error => {
           statusEl.textContent =
             "Errore Firebase: " + error.message;
+
           console.error("Errore lettura Firebase:", error);
         }
       );
     }
 
-    // Cambia filtro senza creare un nuovo listener Firebase.
+    // Il filtro usa l'ultimo snapshot ricevuto.
     eventFilter.addEventListener("change", () => {
-      if (latestSnapshot) showEvents(latestSnapshot);
+      if (latestSnapshot) {
+        showEvents(latestSnapshot);
+      }
     });
 
     // ==========================================
@@ -641,6 +668,7 @@
     document.getElementById("prevDay").addEventListener("click", () => {
       const date = parseLocalDate(dateInput.value);
       date.setDate(date.getDate() - 1);
+
       dateInput.value = localDateString(date);
       listenForEvents();
     });
@@ -648,6 +676,7 @@
     document.getElementById("nextDay").addEventListener("click", () => {
       const date = parseLocalDate(dateInput.value);
       date.setDate(date.getDate() + 1);
+
       dateInput.value = localDateString(date);
       listenForEvents();
     });
@@ -660,7 +689,7 @@
     dateInput.addEventListener("change", listenForEvents);
 
     // ==========================================
-    // 9. INSERIMENTO NUOVI EVENTI
+    // 9. INSERIMENTO DI UN NUOVO EVENTO
     // ==========================================
 
     eventForm.addEventListener("submit", async formEvent => {
@@ -713,6 +742,7 @@
       } catch (error) {
         messageEl.textContent =
           "Errore durante il salvataggio. Controlla Firebase.";
+
         messageEl.classList.add("error");
         console.error("Errore inserimento:", error);
       } finally {
@@ -725,34 +755,19 @@
     // ==========================================
 
     try {
-      const configIsValid =
-        firebaseConfig.apiKey &&
-        firebaseConfig.authDomain &&
-        firebaseConfig.databaseURL &&
-        firebaseConfig.projectId &&
-        firebaseConfig.appId &&
-        !firebaseConfig.apiKey.includes("INSERISCI_") &&
-        !firebaseConfig.authDomain.includes("INSERISCI_") &&
-        !firebaseConfig.databaseURL.includes("INSERISCI_") &&
-        !firebaseConfig.projectId.includes("INSERISCI_") &&
-        !firebaseConfig.appId.includes("INSERISCI_");
-
-      if (!configIsValid) {
-        statusEl.textContent =
-          "Configura i dati reali del tuo progetto Firebase nel codice.";
-      } else {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-        }
-
-        database = firebase.database();
-        eventsRef = database.ref("calendario/eventi");
-
-        listenForEvents();
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
       }
+
+      database = firebase.database();
+      eventsRef = database.ref("calendario/eventi");
+
+      listenForEvents();
+
     } catch (error) {
       statusEl.textContent =
         "Errore durante l'avvio di Firebase: " + error.message;
+
       console.error("Errore avvio Firebase:", error);
     }
   </script>
